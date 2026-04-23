@@ -1,0 +1,655 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MVC vs Monolito — Arquitetura de Software</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:ital,wght@0,400;0,500;0,600;1,400&family=Cabinet+Grotesk:wght@400;500;700;800;900&family=Lora:ital,wght@1,400;1,600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #f5f2eb;
+  --bg2: #edeae0;
+  --surface: #ffffff;
+  --ink: #1a1a1a;
+  --ink2: #3d3d3d;
+  --muted: #8a8070;
+  --border: #d8d3c8;
+  --mvc: #1a56e8;
+  --mvc-light: #e8eeff;
+  --mvc-mid: #c2d0ff;
+  --mono: #c0392b;
+  --mono-light: #fdf0ee;
+  --mono-mid: #f5bfba;
+  --accent: #2d6a4f;
+  --accent-light: #e8f5ee;
+}
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; }
+body { background: var(--bg); color: var(--ink); font-family: 'Cabinet Grotesk', sans-serif; overflow-x: hidden; }
+
+.topbar {
+  background: var(--ink); color: var(--bg);
+  padding: 10px 48px;
+  font-family: 'IBM Plex Mono', monospace; font-size: 11px; letter-spacing: 0.08em;
+  display: flex; justify-content: space-between; align-items: center; gap: 20px; flex-wrap: wrap;
+}
+.topbar-left { opacity: 0.5; }
+.topbar-right { display: flex; gap: 24px; opacity: 0.7; }
+
+.hero { padding: 72px 48px 56px; max-width: 1160px; margin: 0 auto; }
+.hero-kicker {
+  font-family: 'IBM Plex Mono', monospace; font-size: 11px;
+  letter-spacing: 0.2em; text-transform: uppercase; color: var(--muted);
+  margin-bottom: 20px; display: flex; align-items: center; gap: 12px;
+}
+.hero-kicker::before { content: ''; display: inline-block; width: 32px; height: 1px; background: var(--muted); }
+
+h1 { font-size: clamp(3rem, 7vw, 6.5rem); font-weight: 900; line-height: 0.95; letter-spacing: -0.03em; margin-bottom: 32px; }
+h1 .word-mvc { color: var(--mvc); }
+h1 .word-vs { font-family: 'Lora', serif; font-style: italic; font-weight: 400; color: var(--muted); font-size: 0.55em; vertical-align: middle; margin: 0 12px; }
+h1 .word-mono { color: var(--mono); }
+
+.hero-desc { max-width: 620px; font-size: 17px; line-height: 1.7; color: var(--ink2); margin-bottom: 36px; }
+.hero-tags { display: flex; gap: 8px; flex-wrap: wrap; }
+.tag { background: var(--ink); color: var(--bg); font-family: 'IBM Plex Mono', monospace; font-size: 11px; padding: 5px 12px; border-radius: 2px; letter-spacing: 0.05em; }
+.tag.mvc { background: var(--mvc); }
+.tag.mono { background: var(--mono); }
+.tag.green { background: var(--accent); }
+
+.ruled { border: none; border-top: 1px solid var(--border); max-width: 1160px; margin: 0 auto; }
+
+.section { max-width: 1160px; margin: 0 auto; padding: 64px 48px; }
+.section-header { display: flex; align-items: baseline; gap: 20px; margin-bottom: 40px; }
+.sec-num { font-family: 'IBM Plex Mono', monospace; font-size: 11px; color: var(--muted); letter-spacing: 0.1em; flex-shrink: 0; padding-top: 6px; }
+.sec-title { font-size: clamp(1.6rem, 3vw, 2.4rem); font-weight: 800; letter-spacing: -0.02em; line-height: 1.1; }
+
+.split { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
+
+.arch-card { border-radius: 8px; overflow: hidden; border: 1px solid var(--border); }
+.arch-card-header { padding: 24px 28px 20px; display: flex; align-items: center; gap: 16px; }
+.arch-card.mvc-card .arch-card-header { background: var(--mvc); color: white; }
+.arch-card.mono-card .arch-card-header { background: var(--mono); color: white; }
+.arch-card-icon { width: 48px; height: 48px; background: rgba(255,255,255,0.15); border-radius: 6px; display: flex; align-items: center; justify-content: center; font-size: 22px; flex-shrink: 0; }
+.arch-card-name { font-family: 'IBM Plex Mono', monospace; font-size: 13px; opacity: 0.75; margin-bottom: 4px; letter-spacing: 0.1em; }
+.arch-card-title { font-size: 22px; font-weight: 800; letter-spacing: -0.01em; }
+.arch-card-body { background: var(--surface); padding: 28px; }
+.arch-desc { font-size: 14px; line-height: 1.8; color: var(--ink2); margin-bottom: 24px; padding-bottom: 24px; border-bottom: 1px solid var(--border); }
+
+.layers { display: flex; flex-direction: column; gap: 8px; margin-bottom: 24px; }
+.layer { display: flex; align-items: center; gap: 14px; padding: 12px 16px; border-radius: 4px; font-size: 13px; font-weight: 600; }
+.layer-badge { font-family: 'IBM Plex Mono', monospace; font-size: 10px; font-weight: 600; letter-spacing: 0.1em; padding: 3px 10px; border-radius: 2px; flex-shrink: 0; text-transform: uppercase; }
+.layer-desc { font-size: 12px; color: var(--muted); font-weight: 400; margin-top: 2px; }
+.layer-content { flex: 1; }
+.layer-title { font-size: 13px; font-weight: 700; }
+.layer-arrow { text-align: center; font-size: 16px; color: var(--muted); margin: -2px 0; }
+
+.mvc-layer-m { background: var(--mvc-light); }
+.mvc-layer-m .layer-badge { background: var(--mvc); color: white; }
+.mvc-layer-v { background: #eef6ff; }
+.mvc-layer-v .layer-badge { background: #2196f3; color: white; }
+.mvc-layer-c { background: #f0f4ff; }
+.mvc-layer-c .layer-badge { background: #5c6bc0; color: white; }
+.mono-layer-1 { background: var(--mono-light); }
+.mono-layer-1 .layer-badge { background: var(--mono); color: white; }
+.mono-layer-2 { background: #fff5f3; }
+.mono-layer-2 .layer-badge { background: #e67e22; color: white; }
+.mono-layer-3 { background: #fdf7f0; }
+.mono-layer-3 .layer-badge { background: #d4a017; color: white; }
+
+.pros-cons { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.pro-con-label { font-family: 'IBM Plex Mono', monospace; font-size: 10px; letter-spacing: 0.15em; text-transform: uppercase; margin-bottom: 10px; font-weight: 500; }
+.pro-con-label.pro { color: var(--accent); }
+.pro-con-label.con { color: var(--mono); }
+.pro-con-list { display: flex; flex-direction: column; gap: 6px; }
+.pro-con-item { font-size: 12px; color: var(--ink2); line-height: 1.5; display: flex; gap: 8px; align-items: flex-start; }
+.pro-con-item::before { flex-shrink: 0; font-size: 14px; line-height: 1.3; }
+.pro-item::before { content: '+'; color: var(--accent); font-weight: 700; }
+.con-item::before { content: '-'; color: var(--mono); font-weight: 700; }
+
+.comp-table { width: 100%; border-collapse: collapse; font-size: 13px; border: 1px solid var(--border); border-radius: 6px; overflow: hidden; }
+.comp-table thead { background: var(--ink); color: var(--bg); }
+.comp-table th { padding: 14px 20px; text-align: left; font-family: 'IBM Plex Mono', monospace; font-size: 11px; letter-spacing: 0.1em; font-weight: 500; }
+.comp-table th.mvc-h { color: #8ab4ff; }
+.comp-table th.mono-h { color: #ff9988; }
+.comp-table td { padding: 14px 20px; border-top: 1px solid var(--border); vertical-align: top; line-height: 1.6; }
+.comp-table tr:nth-child(even) td { background: var(--bg2); }
+.comp-table td:first-child { font-weight: 700; font-size: 12px; color: var(--muted); font-family: 'IBM Plex Mono', monospace; white-space: nowrap; }
+.comp-table td.mvc-td { color: var(--mvc); font-weight: 600; }
+.comp-table td.mono-td { color: var(--mono); font-weight: 600; }
+
+.flow-diagram { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 32px; margin: 20px 0; }
+.flow-title { font-family: 'IBM Plex Mono', monospace; font-size: 11px; letter-spacing: 0.15em; text-transform: uppercase; color: var(--muted); margin-bottom: 24px; }
+.flow-row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-bottom: 8px; }
+.flow-box { padding: 10px 18px; border-radius: 4px; font-size: 12px; font-weight: 700; font-family: 'IBM Plex Mono', monospace; text-align: center; min-width: 100px; }
+.flow-arrow { font-size: 18px; color: var(--muted); flex-shrink: 0; }
+.flow-box.user { background: var(--bg2); color: var(--ink); border: 1px solid var(--border); }
+.flow-box.controller { background: var(--mvc); color: white; }
+.flow-box.model { background: #2d5bce; color: white; }
+.flow-box.view { background: #2196f3; color: white; }
+.flow-box.db { background: var(--ink2); color: white; }
+.flow-box.mono-all { background: var(--mono); color: white; min-width: 200px; }
+.flow-box.mono-db { background: var(--ink2); color: white; }
+.flow-label { font-size: 11px; color: var(--muted); font-family: 'IBM Plex Mono', monospace; margin-top: 12px; line-height: 1.7; }
+
+.quando-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+.quando-card { border-radius: 6px; overflow: hidden; border: 1px solid var(--border); }
+.quando-head { padding: 16px 22px; font-weight: 800; font-size: 15px; display: flex; align-items: center; gap: 10px; }
+.quando-head.mvc-head { background: var(--mvc-light); color: var(--mvc); border-bottom: 2px solid var(--mvc-mid); }
+.quando-head.mono-head { background: var(--mono-light); color: var(--mono); border-bottom: 2px solid var(--mono-mid); }
+.quando-body { background: var(--surface); padding: 20px 22px; }
+.quando-item { display: flex; gap: 10px; font-size: 13px; color: var(--ink2); line-height: 1.6; margin-bottom: 10px; }
+.quando-item:last-child { margin-bottom: 0; }
+.quando-item::before { content: '->'; color: var(--muted); flex-shrink: 0; font-family: 'IBM Plex Mono', monospace; font-size: 11px; padding-top: 2px; }
+
+.pull-quote { border-left: 4px solid var(--ink); padding: 20px 28px; margin: 32px 0; background: var(--surface); }
+.pull-quote p { font-family: 'Lora', serif; font-style: italic; font-size: 20px; color: var(--ink); line-height: 1.5; }
+.pull-quote cite { display: block; font-family: 'IBM Plex Mono', monospace; font-size: 11px; color: var(--muted); margin-top: 10px; font-style: normal; letter-spacing: 0.08em; }
+
+.code-block { background: #1e1e2e; border-radius: 6px; overflow: hidden; margin: 16px 0; }
+.code-bar { background: #2a2a3e; padding: 10px 16px; display: flex; align-items: center; gap: 8px; }
+.code-dot { width: 10px; height: 10px; border-radius: 50%; }
+.code-dot:nth-child(1) { background: #ff5f57; }
+.code-dot:nth-child(2) { background: #ffbd2e; }
+.code-dot:nth-child(3) { background: #28c940; }
+.code-file { font-family: 'IBM Plex Mono', monospace; font-size: 11px; color: #666; margin-left: 8px; letter-spacing: 0.05em; }
+.code-body { padding: 20px 24px; font-family: 'IBM Plex Mono', monospace; font-size: 12px; line-height: 1.9; color: #cdd3de; overflow-x: auto; white-space: pre; }
+.c-comment { color: #5c6773; }
+.c-keyword { color: #ff7b72; }
+.c-class { color: #ffa657; }
+.c-func { color: #d2a8ff; }
+.c-string { color: #a5d6ff; }
+.c-var { color: #79c0ff; }
+
+.treino-intro { background: var(--ink); color: var(--bg); border-radius: 8px; padding: 36px 40px; margin-bottom: 28px; position: relative; overflow: hidden; }
+.treino-intro::before { content: '</>'; position: absolute; right: 40px; top: 50%; transform: translateY(-50%); font-family: 'IBM Plex Mono', monospace; font-size: 80px; font-weight: 600; opacity: 0.05; letter-spacing: -0.05em; }
+.treino-intro-title { font-size: 22px; font-weight: 800; margin-bottom: 10px; letter-spacing: -0.01em; }
+.treino-intro-sub { font-size: 13px; opacity: 0.6; line-height: 1.7; max-width: 540px; }
+
+.treino-steps { display: flex; flex-direction: column; gap: 16px; }
+.treino-step { display: grid; grid-template-columns: 56px 1fr; border: 1px solid var(--border); border-radius: 6px; overflow: hidden; transition: box-shadow 0.2s; }
+.treino-step:hover { box-shadow: 0 4px 20px rgba(0,0,0,0.08); }
+.step-num-col { background: var(--bg2); display: flex; align-items: center; justify-content: center; font-family: 'IBM Plex Mono', monospace; font-size: 18px; font-weight: 600; color: var(--muted); border-right: 1px solid var(--border); }
+.treino-step.s-mvc .step-num-col { background: var(--mvc); color: white; border-right-color: var(--mvc); }
+.treino-step.s-mono .step-num-col { background: var(--mono); color: white; border-right-color: var(--mono); }
+.treino-step.s-green .step-num-col { background: var(--accent); color: white; border-right-color: var(--accent); }
+.step-body { background: var(--surface); padding: 20px 24px; }
+.step-phase { font-family: 'IBM Plex Mono', monospace; font-size: 10px; letter-spacing: 0.15em; text-transform: uppercase; color: var(--muted); margin-bottom: 5px; }
+.step-title { font-size: 16px; font-weight: 800; color: var(--ink); margin-bottom: 8px; letter-spacing: -0.01em; }
+.step-desc { font-size: 13px; color: var(--ink2); line-height: 1.7; margin-bottom: 12px; }
+.step-tasks { display: flex; flex-direction: column; gap: 6px; }
+.step-task { font-size: 12px; color: var(--ink2); display: flex; gap: 10px; align-items: flex-start; line-height: 1.5; }
+.step-task::before { content: 'v'; color: var(--muted); flex-shrink: 0; font-family: 'IBM Plex Mono'; }
+.step-badge { display: inline-block; font-family: 'IBM Plex Mono', monospace; font-size: 10px; padding: 2px 8px; border-radius: 2px; margin-left: 6px; font-weight: 500; vertical-align: middle; }
+.badge-mvc { background: var(--mvc-light); color: var(--mvc); }
+.badge-mono { background: var(--mono-light); color: var(--mono); }
+.badge-both { background: var(--accent-light); color: var(--accent); }
+
+.challenge-box { background: var(--surface); border: 1px solid var(--border); border-left: 4px solid var(--accent); border-radius: 0 6px 6px 0; padding: 28px 32px; margin-top: 28px; }
+.challenge-title { font-size: 18px; font-weight: 800; margin-bottom: 8px; }
+.challenge-desc { font-size: 13px; color: var(--ink2); line-height: 1.8; margin-bottom: 20px; }
+.challenge-req { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.req-item { background: var(--bg2); border: 1px solid var(--border); border-radius: 4px; padding: 12px 16px; font-size: 12px; line-height: 1.6; color: var(--ink2); }
+.req-item strong { display: block; font-size: 10px; font-family: 'IBM Plex Mono', monospace; letter-spacing: 0.08em; color: var(--muted); margin-bottom: 4px; text-transform: uppercase; }
+
+.gloss-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 12px; }
+.gloss-item { background: var(--surface); border: 1px solid var(--border); border-radius: 6px; padding: 18px 20px; transition: border-color 0.2s; }
+.gloss-item:hover { border-color: var(--ink); }
+.gloss-term { font-family: 'IBM Plex Mono', monospace; font-size: 13px; font-weight: 600; color: var(--ink); margin-bottom: 6px; }
+.gloss-def { font-size: 12px; color: var(--muted); line-height: 1.6; }
+
+footer { background: var(--ink); color: rgba(245,242,235,0.4); padding: 32px 48px; font-family: 'IBM Plex Mono', monospace; font-size: 11px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; letter-spacing: 0.05em; }
+footer span { color: rgba(245,242,235,0.7); }
+
+@media (max-width: 700px) {
+  .topbar, .hero, .section, footer { padding-left: 20px; padding-right: 20px; }
+  .split, .quando-grid, .pros-cons, .challenge-req { grid-template-columns: 1fr; }
+}
+
+@keyframes fadeUp { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: translateY(0); } }
+.hero > * { animation: fadeUp 0.5s ease both; }
+.hero > *:nth-child(1) { animation-delay: 0.05s; }
+.hero > *:nth-child(2) { animation-delay: 0.12s; }
+.hero > *:nth-child(3) { animation-delay: 0.19s; }
+.hero > *:nth-child(4) { animation-delay: 0.26s; }
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <span class="topbar-left">// arquitetura_de_software — turma de programacao</span>
+  <div class="topbar-right"><span>MVC</span><span>MONOLITO</span><span>PESQUISA</span></div>
+</div>
+
+<header class="hero">
+  <div class="hero-kicker">Arquitetura de Software</div>
+  <h1>
+    <span class="word-mvc">MVC</span>
+    <span class="word-vs">vs</span>
+    <span class="word-mono">Monolito</span>
+  </h1>
+  <p class="hero-desc">
+    Dois dos padrões arquiteturais mais fundamentais do desenvolvimento de software.
+    Entender a diferença entre eles é o primeiro passo para tomar decisões técnicas conscientes em qualquer projeto real.
+  </p>
+  <div class="hero-tags">
+    <span class="tag mvc">Model-View-Controller</span>
+    <span class="tag mono">Arquitetura Monolítica</span>
+    <span class="tag green">Boas Práticas</span>
+    <span class="tag">Back-end</span>
+    <span class="tag">Design de Sistema</span>
+  </div>
+</header>
+
+<hr class="ruled">
+
+<!-- 01: AS DUAS ARQUITETURAS -->
+<section class="section">
+  <div class="section-header">
+    <span class="sec-num">01 //</span>
+    <h2 class="sec-title">As Duas Arquiteturas</h2>
+  </div>
+  <div class="split">
+    <div class="arch-card mvc-card">
+      <div class="arch-card-header">
+        <div class="arch-card-icon">🧩</div>
+        <div>
+          <div class="arch-card-name">DESIGN PATTERN</div>
+          <div class="arch-card-title">MVC</div>
+        </div>
+      </div>
+      <div class="arch-card-body">
+        <p class="arch-desc">O <strong>Model-View-Controller</strong> é um padrão de projeto que divide a aplicação em três camadas com responsabilidades bem definidas. Cada camada faz uma coisa só — e faz bem feita. A comunicação segue um fluxo controlado entre elas.</p>
+        <div class="layers">
+          <div class="layer mvc-layer-m">
+            <span class="layer-badge">M</span>
+            <div class="layer-content"><div class="layer-title">Model</div><div class="layer-desc">Dados, regras de negócio e banco de dados</div></div>
+          </div>
+          <div class="layer-arrow">↕</div>
+          <div class="layer mvc-layer-c">
+            <span class="layer-badge">C</span>
+            <div class="layer-content"><div class="layer-title">Controller</div><div class="layer-desc">Recebe requests, processa e coordena</div></div>
+          </div>
+          <div class="layer-arrow">↕</div>
+          <div class="layer mvc-layer-v">
+            <span class="layer-badge">V</span>
+            <div class="layer-content"><div class="layer-title">View</div><div class="layer-desc">Interface, renderização, o que o usuário vê</div></div>
+          </div>
+        </div>
+        <div class="pros-cons">
+          <div class="pro-con-col">
+            <div class="pro-con-label pro">Vantagens</div>
+            <div class="pro-con-list">
+              <div class="pro-con-item pro-item">Código organizado e separado</div>
+              <div class="pro-con-item pro-item">Fácil de testar cada parte</div>
+              <div class="pro-con-item pro-item">Times trabalham em paralelo</div>
+              <div class="pro-con-item pro-item">Alto reuso de código</div>
+            </div>
+          </div>
+          <div class="pro-con-col">
+            <div class="pro-con-label con">Desvantagens</div>
+            <div class="pro-con-list">
+              <div class="pro-con-item con-item">Curva de aprendizado inicial</div>
+              <div class="pro-con-item con-item">Mais arquivos e pastas</div>
+              <div class="pro-con-item con-item">Pode ser excessivo para apps simples</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="arch-card mono-card">
+      <div class="arch-card-header">
+        <div class="arch-card-icon">🏗️</div>
+        <div>
+          <div class="arch-card-name">ARQUITETURA</div>
+          <div class="arch-card-title">Monolito</div>
+        </div>
+      </div>
+      <div class="arch-card-body">
+        <p class="arch-desc">Na <strong>Arquitetura Monolítica</strong>, toda a aplicação é construída como uma unidade única. Interface, lógica de negócio e acesso a dados vivem no mesmo lugar, compilados e implantados juntos. Simples de começar, difícil de escalar.</p>
+        <div class="layers">
+          <div class="layer mono-layer-1">
+            <span class="layer-badge">UI</span>
+            <div class="layer-content"><div class="layer-title">Interface do Usuário</div><div class="layer-desc">Apresentação e interação</div></div>
+          </div>
+          <div class="layer-arrow">↓</div>
+          <div class="layer mono-layer-2">
+            <span class="layer-badge">BIZ</span>
+            <div class="layer-content"><div class="layer-title">Lógica de Negócio</div><div class="layer-desc">Regras, processamento, validações</div></div>
+          </div>
+          <div class="layer-arrow">↓</div>
+          <div class="layer mono-layer-3">
+            <span class="layer-badge">DB</span>
+            <div class="layer-content"><div class="layer-title">Acesso a Dados</div><div class="layer-desc">Queries, ORM, persistência</div></div>
+          </div>
+        </div>
+        <div class="pros-cons">
+          <div class="pro-con-col">
+            <div class="pro-con-label pro">Vantagens</div>
+            <div class="pro-con-list">
+              <div class="pro-con-item pro-item">Simples de desenvolver no início</div>
+              <div class="pro-con-item pro-item">Fácil de fazer deploy</div>
+              <div class="pro-con-item pro-item">Debugging mais direto</div>
+              <div class="pro-con-item pro-item">Ótimo para MVPs rápidos</div>
+            </div>
+          </div>
+          <div class="pro-con-col">
+            <div class="pro-con-label con">Desvantagens</div>
+            <div class="pro-con-list">
+              <div class="pro-con-item con-item">Vira uma "bola de lama" ao crescer</div>
+              <div class="pro-con-item con-item">Difícil escalar partes separadas</div>
+              <div class="pro-con-item con-item">Mudança num ponto quebra tudo</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<hr class="ruled">
+
+<!-- 02: FLUXO -->
+<section class="section">
+  <div class="section-header">
+    <span class="sec-num">02 //</span>
+    <h2 class="sec-title">Como Funciona o Fluxo</h2>
+  </div>
+
+  <div class="flow-diagram">
+    <div class="flow-title">// fluxo de uma requisicao no MVC</div>
+    <div class="flow-row">
+      <div class="flow-box user">Usuario</div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-box controller">Controller</div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-box model">Model</div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-box db">Banco de Dados</div>
+    </div>
+    <div style="padding: 4px 0 4px 122px; font-size: 20px; color: var(--muted);">↓ retorna dados</div>
+    <div class="flow-row">
+      <div class="flow-box user">Resposta</div>
+      <div class="flow-arrow">←</div>
+      <div class="flow-box view">View</div>
+      <div class="flow-arrow">←</div>
+      <div class="flow-box model">Model</div>
+    </div>
+    <div class="flow-label">Controller recebe a request → pede dados ao Model → Model consulta o BD → devolve ao Controller → passa para a View → View renderiza para o usuario</div>
+  </div>
+
+  <div class="flow-diagram">
+    <div class="flow-title">// fluxo de uma requisicao no Monolito</div>
+    <div class="flow-row">
+      <div class="flow-box user">Usuario</div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-box mono-all">Aplicacao Monolitica<br><small style="font-weight:400;opacity:0.7;font-size:10px">(UI + Logica + Dados juntos)</small></div>
+      <div class="flow-arrow">⇄</div>
+      <div class="flow-box mono-db">Banco de Dados</div>
+    </div>
+    <div class="flow-label">Tudo numa camada unica — a aplicacao processa e responde sem separacao formal de responsabilidades</div>
+  </div>
+
+  <div class="pull-quote">
+    <p>"Num monolito, voce constroi uma coisa. No MVC, voce constroi tres coisas que funcionam em harmonia."</p>
+    <cite>— Principio da Separacao de Responsabilidades (SoC)</cite>
+  </div>
+</section>
+
+<hr class="ruled">
+
+<!-- 03: CODIGO -->
+<section class="section">
+  <div class="section-header">
+    <span class="sec-num">03 //</span>
+    <h2 class="sec-title">Exemplo Pratico de Codigo</h2>
+  </div>
+  <div class="split">
+    <div>
+      <p style="font-size:12px;color:var(--muted);font-family:'IBM Plex Mono';margin-bottom:10px;">// MVC — cada responsabilidade no seu lugar</p>
+      <div class="code-block">
+        <div class="code-bar">
+          <div class="code-dot"></div><div class="code-dot"></div><div class="code-dot"></div>
+          <span class="code-file">UserController.php</span>
+        </div>
+        <div class="code-body"><span class="c-comment">// CONTROLLER — so coordena</span>
+<span class="c-keyword">class</span> <span class="c-class">UserController</span> {
+  <span class="c-keyword">public function</span> <span class="c-func">show</span>(<span class="c-var">$id</span>) {
+    <span class="c-var">$user</span> = <span class="c-class">UserModel</span>::<span class="c-func">find</span>(<span class="c-var">$id</span>);
+    <span class="c-keyword">return</span> <span class="c-func">view</span>(<span class="c-string">'user.profile'</span>, [<span class="c-var">$user</span>]);
+  }
+}
+
+<span class="c-comment">// MODEL — so dados e regras</span>
+<span class="c-keyword">class</span> <span class="c-class">UserModel</span> {
+  <span class="c-keyword">public static function</span> <span class="c-func">find</span>(<span class="c-var">$id</span>) {
+    <span class="c-keyword">return</span> <span class="c-class">DB</span>::<span class="c-func">query</span>(
+      <span class="c-string">"SELECT * FROM users WHERE id=?"</span>,
+      [<span class="c-var">$id</span>]
+    );
+  }
+}
+
+<span class="c-comment">// VIEW — so apresentacao (template)</span>
+<span class="c-comment">// user/profile.blade.php</span>
+&lt;<span class="c-keyword">h1</span>&gt;{{ <span class="c-var">$user</span>-&gt;name }}&lt;/<span class="c-keyword">h1</span>&gt;</div>
+      </div>
+    </div>
+    <div>
+      <p style="font-size:12px;color:var(--muted);font-family:'IBM Plex Mono';margin-bottom:10px;">// Monolito — tudo misturado num arquivo so</p>
+      <div class="code-block">
+        <div class="code-bar">
+          <div class="code-dot"></div><div class="code-dot"></div><div class="code-dot"></div>
+          <span class="code-file">user_page.php</span>
+        </div>
+        <div class="code-body"><span class="c-comment">// MONOLITO — tudo no mesmo arquivo</span>
+&lt;?<span class="c-keyword">php</span>
+<span class="c-var">$id</span> = <span class="c-var">$_GET</span>[<span class="c-string">'id'</span>];
+
+<span class="c-comment">// Acesso direto ao banco aqui mesmo</span>
+<span class="c-var">$conn</span> = <span class="c-func">mysqli_connect</span>(<span class="c-string">"localhost"</span>, ...);
+<span class="c-var">$result</span> = <span class="c-func">mysqli_query</span>(<span class="c-var">$conn</span>,
+  <span class="c-string">"SELECT * FROM users WHERE id=$id"</span>
+);
+<span class="c-var">$user</span> = <span class="c-func">mysqli_fetch_assoc</span>(<span class="c-var">$result</span>);
+?&gt;
+
+<span class="c-comment">&lt;!-- HTML misturado com PHP --&gt;</span>
+&lt;<span class="c-keyword">h1</span>&gt;&lt;?= <span class="c-var">$user</span>[<span class="c-string">'name'</span>] ?&gt;&lt;/<span class="c-keyword">h1</span>&gt;</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<hr class="ruled">
+
+<!-- 04: QUANDO USAR -->
+<section class="section">
+  <div class="section-header">
+    <span class="sec-num">04 //</span>
+    <h2 class="sec-title">Quando Usar Cada Um</h2>
+  </div>
+  <div class="quando-grid">
+    <div class="quando-card">
+      <div class="quando-head mvc-head">🧩 Use MVC quando...</div>
+      <div class="quando-body">
+        <div class="quando-item">O projeto vai crescer e ter manutenção a longo prazo</div>
+        <div class="quando-item">Mais de uma pessoa vai trabalhar no mesmo código</div>
+        <div class="quando-item">Você quer escrever testes automatizados</div>
+        <div class="quando-item">A interface pode mudar sem alterar a lógica de negócio</div>
+        <div class="quando-item">Usa um framework como Laravel, Django, Rails, Spring</div>
+        <div class="quando-item">Projeto acadêmico ou portfólio que demonstra boas práticas</div>
+      </div>
+    </div>
+    <div class="quando-card">
+      <div class="quando-head mono-head">🏗️ Use Monolito quando...</div>
+      <div class="quando-body">
+        <div class="quando-item">É um MVP ou protótipo para validar uma ideia rapidamente</div>
+        <div class="quando-item">Time pequeno (1-2 devs) sem plano de escalar</div>
+        <div class="quando-item">Prazo curto e simplicidade é prioridade</div>
+        <div class="quando-item">É um script, automação ou ferramenta interna simples</div>
+        <div class="quando-item">Você está aprendendo e quer entender o básico primeiro</div>
+        <div class="quando-item">Custo de infraestrutura precisa ser mínimo</div>
+      </div>
+    </div>
+  </div>
+
+  <div style="margin-top: 28px;">
+    <table class="comp-table">
+      <thead>
+        <tr>
+          <th>Criterio</th>
+          <th class="mvc-h">MVC</th>
+          <th class="mono-h">Monolito</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr><td>Organizacao</td><td class="mvc-td">Alta — camadas separadas</td><td class="mono-td">Baixa — tudo junto</td></tr>
+        <tr><td>Complexidade inicial</td><td class="mvc-td">Maior</td><td class="mono-td">Menor</td></tr>
+        <tr><td>Escalabilidade</td><td class="mvc-td">Boa — modular</td><td class="mono-td">Limitada com o tempo</td></tr>
+        <tr><td>Testabilidade</td><td class="mvc-td">Alta — camadas isoladas</td><td class="mono-td">Dificil — alto acoplamento</td></tr>
+        <tr><td>Curva de aprendizado</td><td class="mvc-td">Mais ingreme</td><td class="mono-td">Mais suave</td></tr>
+        <tr><td>Velocidade de deploy</td><td class="mvc-td">Depende da estrutura</td><td class="mono-td">Rapido e direto</td></tr>
+        <tr><td>Manutencao a longo prazo</td><td class="mvc-td">Boa</td><td class="mono-td">Ruim se crescer muito</td></tr>
+        <tr><td>Frameworks populares</td><td class="mvc-td">Laravel, Django, Rails, Spring MVC</td><td class="mono-td">PHP puro, Flask simples, scripts</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<hr class="ruled">
+
+<!-- 05: METODO DE TREINAMENTO -->
+<section class="section">
+  <div class="section-header">
+    <span class="sec-num">05 //</span>
+    <h2 class="sec-title">Metodo de Treinamento</h2>
+  </div>
+
+  <div class="treino-intro">
+    <div class="treino-intro-title">🎯 Aprenda Fazendo — Do Monolito ao MVC</div>
+    <div class="treino-intro-sub">O metodo mais eficaz para entender a diferenca entre as duas arquiteturas e construir a <em>mesma aplicacao duas vezes</em>: primeiro como monolito, depois refatorando para MVC. Voce vai sentir na pratica por que a separacao importa.</div>
+  </div>
+
+  <div class="treino-steps">
+
+    <div class="treino-step s-green">
+      <div class="step-num-col">00</div>
+      <div class="step-body">
+        <div class="step-phase">Pre-requisito — 30 min</div>
+        <div class="step-title">Estudo Teorico Antes de Codar</div>
+        <div class="step-desc">Antes de abrir o editor, leia e discuta os conceitos. Quem constroi sem entender vai construir errado.</div>
+        <div class="step-tasks">
+          <div class="step-task">Leia o que e MVC e desenhe o diagrama de fluxo no papel <span class="step-badge badge-mvc">MVC</span></div>
+          <div class="step-task">Leia o que e Arquitetura Monolitica e liste 2 exemplos reais <span class="step-badge badge-mono">Monolito</span></div>
+          <div class="step-task">Discuta em dupla: "qual usaria para um app de lista de tarefas e por que?" <span class="step-badge badge-both">debate</span></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="treino-step s-mono">
+      <div class="step-num-col">01</div>
+      <div class="step-body">
+        <div class="step-phase">Fase 1 — Monolito</div>
+        <div class="step-title">Construa o CRUD como Monolito</div>
+        <div class="step-desc">Crie uma aplicacao simples de cadastro (usuarios, produtos ou tarefas) colocando tudo em um unico arquivo sem separacao. O objetivo e sentir como fica quando cresce sem estrutura.</div>
+        <div class="step-tasks">
+          <div class="step-task">Criar um arquivo unico com HTML + logica + consulta ao banco misturados</div>
+          <div class="step-task">Implementar o CRUD completo: listar, criar, editar e deletar</div>
+          <div class="step-task">Adicionar validacao de formulario dentro do mesmo arquivo</div>
+          <div class="step-task">Observar: o arquivo vai crescer rapidamente. Isso e intencional.</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="treino-step">
+      <div class="step-num-col">02</div>
+      <div class="step-body">
+        <div class="step-phase">Fase 2 — Reflexao Critica</div>
+        <div class="step-title">Identifique os Problemas do Monolito</div>
+        <div class="step-desc">Com o monolito funcionando, pare e analise o codigo que voce escreveu. Esta etapa cria a motivacao real para aprender o MVC.</div>
+        <div class="step-tasks">
+          <div class="step-task">Responda: "se eu quiser mudar so a aparencia, quantas linhas terei que mexer?"</div>
+          <div class="step-task">Responda: "se eu quiser reaproveitar a consulta ao banco em outra pagina, como faco?"</div>
+          <div class="step-task">Responda: "se outro dev entrar no projeto, quanto tempo levaria para entender o codigo?"</div>
+          <div class="step-task">Anote as respostas — elas vao fazer sentido na Fase 3</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="treino-step s-mvc">
+      <div class="step-num-col">03</div>
+      <div class="step-body">
+        <div class="step-phase">Fase 3 — MVC</div>
+        <div class="step-title">Refatore o Mesmo CRUD para MVC</div>
+        <div class="step-desc">Pegue o CRUD que voce fez no monolito e refatore para a estrutura MVC. Nao reescreva do zero — reorganize o que ja existe nas camadas corretas.</div>
+        <div class="step-tasks">
+          <div class="step-task">Criar pasta models/ — mover toda logica de banco para la <span class="step-badge badge-mvc">Model</span></div>
+          <div class="step-task">Criar pasta views/ — mover todo HTML/template para la <span class="step-badge badge-mvc">View</span></div>
+          <div class="step-task">Criar pasta controllers/ — criar os controladores que conectam tudo <span class="step-badge badge-mvc">Controller</span></div>
+          <div class="step-task">Regra de ouro: a View NUNCA acessa o banco diretamente</div>
+          <div class="step-task">Testar se a aplicacao continua funcionando exatamente igual ao monolito</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="treino-step s-green">
+      <div class="step-num-col">04</div>
+      <div class="step-body">
+        <div class="step-phase">Fase 4 — Apresentacao</div>
+        <div class="step-title">Compare as Duas Versoes para a Turma</div>
+        <div class="step-desc">Com as duas versoes prontas, apresente as diferencas na pratica. Mostre o codigo lado a lado e responda as perguntas da Fase 2 novamente — agora com a versao MVC.</div>
+        <div class="step-tasks">
+          <div class="step-task">Mostre a estrutura de pastas das duas versoes lado a lado</div>
+          <div class="step-task">Simule uma mudanca: "altere a cor do botao em cada versao" — qual e mais facil?</div>
+          <div class="step-task">Simule outra mudanca: "adicione um campo novo ao cadastro" — qual da mais trabalho?</div>
+          <div class="step-task">Argumente: em qual projeto real voce aplicaria cada arquitetura e por que?</div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <div class="challenge-box">
+    <div class="challenge-title">🏆 Desafio Extra — Para quem terminar antes</div>
+    <div class="challenge-desc">Implemente a mesma aplicacao usando um <strong>framework MVC real</strong> (Laravel, Django ou Rails). Compare a estrutura gerada automaticamente pelo framework com a sua estrutura manual. O que o framework faz por voce? O que voce ainda precisa fazer?</div>
+    <div class="challenge-req">
+      <div class="req-item"><strong>// entregavel</strong>Repositorio no GitHub com as duas versoes (monolito + mvc) em pastas separadas, com README explicando as diferencas encontradas</div>
+      <div class="req-item"><strong>// app sugerida</strong>CRUD de qualquer coisa: tarefas, produtos, alunos, livros. Minimo: listar, criar, editar e deletar</div>
+      <div class="req-item"><strong>// linguagens aceitas</strong>PHP, Python, JavaScript (Node), Java — qualquer uma combinada com o professor</div>
+      <div class="req-item"><strong>// diferencial</strong>Adicionar autenticacao simples (login/logout) na versao MVC para ver como a separacao facilita a seguranca</div>
+    </div>
+  </div>
+</section>
+
+<hr class="ruled">
+
+<!-- 06: GLOSSARIO -->
+<section class="section">
+  <div class="section-header">
+    <span class="sec-num">06 //</span>
+    <h2 class="sec-title">Glossario Rapido</h2>
+  </div>
+  <div class="gloss-grid">
+    <div class="gloss-item"><div class="gloss-term">Model</div><div class="gloss-def">Camada responsavel pelos dados, regras de negocio e comunicacao com o banco. Nao sabe nada sobre a interface.</div></div>
+    <div class="gloss-item"><div class="gloss-term">View</div><div class="gloss-def">Camada de apresentacao — tudo que o usuario ve. Recebe dados do Controller e os exibe. Nao processa logica.</div></div>
+    <div class="gloss-item"><div class="gloss-term">Controller</div><div class="gloss-def">O intermediario. Recebe a requisicao, pede dados ao Model e passa para a View renderizar. O "maestro" do MVC.</div></div>
+    <div class="gloss-item"><div class="gloss-term">Monolito</div><div class="gloss-def">Aplicacao onde UI, logica e dados ficam na mesma unidade de codigo. Simples de comecar, problematico ao crescer.</div></div>
+    <div class="gloss-item"><div class="gloss-term">Separacao de Responsabilidades</div><div class="gloss-def">Principio onde cada parte do codigo tem uma unica responsabilidade bem definida. Base do MVC e da maioria dos padroes modernos.</div></div>
+    <div class="gloss-item"><div class="gloss-term">CRUD</div><div class="gloss-def">Create, Read, Update, Delete — as quatro operacoes basicas de persistencia de dados. Todo sistema tem alguma forma de CRUD.</div></div>
+    <div class="gloss-item"><div class="gloss-term">Acoplamento</div><div class="gloss-def">Grau de dependencia entre partes do codigo. Monolitos tendem a ter alto acoplamento — mudar uma parte quebra outra.</div></div>
+    <div class="gloss-item"><div class="gloss-term">Refatoracao</div><div class="gloss-def">Reorganizar o codigo sem mudar seu comportamento. No treinamento, voce refatora o monolito para MVC mantendo as funcionalidades.</div></div>
+    <div class="gloss-item"><div class="gloss-term">Framework</div><div class="gloss-def">Conjunto de ferramentas que ja implementa MVC e boas praticas por voce. Exemplos: Laravel (PHP), Django (Python), Rails (Ruby).</div></div>
+  </div>
+</section>
+
+<footer>
+  <span>// mvc_vs_monolito.html</span>
+  <span style="opacity:0.3">---</span>
+  <span>Arquitetura de Software — Turma de Programacao</span>
+  <span style="opacity:0.3">---</span>
+  <span style="opacity:0.5">bons estudos</span>
+</footer>
+
+</body>
+</html>
